@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>WQM 실시간 대기열</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f7f6; }
+        .container { text-align: center; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 350px; }
+        #status-card { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+        .rank-num { font-size: 2.5rem; color: #007bff; font-weight: bold; margin: 10px 0; }
+        .btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        .btn:disabled { background: #ccc; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>WQM 대기열 시스템</h2>
+    <div id="join-section">
+        <input type="text" id="userId" placeholder="사용자 ID 입력">
+        <button class="btn" onclick="subscribe()">대기열 진입</button>
+    </div>
+
+    <div id="status-card" style="display:none;">
+        <p>현재 대기 상태</p>
+        <div id="rank-display" class="rank-num">계산 중...</div>
+        <p id="user-info"></p>
+    </div>
+</div>
+
+<script>
+    let eventSource = null;
+
+    function subscribe() {
+        const userId = document.getElementById('userId').value || 'user-' + Math.floor(Math.random() * 1000);
+        const statusCard = document.getElementById('status-card');
+        const joinSection = document.getElementById('join-section');
+        const rankDisplay = document.getElementById('rank-display');
+
+        joinSection.style.display = 'none';
+        statusCard.style.display = 'block';
+        document.getElementById('user-info').innerText = "ID: " + userId;
+
+        // SSE 연결 시작
+        eventSource = new EventSource(`/api/v1/queue/subscribe?userId=${userId}`);
+
+        // 서버에서 보낸 'queue-status' 이벤트를 수신
+        eventSource.addEventListener('queue-status', function(event) {
+            // event.data에 "내 앞 대기자 수: X명" 문자열이 들어옴
+            rankDisplay.innerText = event.data.replace("내 앞 대기자 수: ", "").replace("명", "");
+
+            // 만약 0명이 되면 자동으로 다른 페이지로 이동하는 로직을 여기에 추가할 수 있습니다.
+            if (event.data.includes(": 0명")) {
+                rankDisplay.style.color = "#28a745";
+                rankDisplay.innerText = "입장 가능!";
+            }
+        });
+
+        eventSource.onerror = function(error) {
+            console.error("SSE 연결 오류:", error);
+            eventSource.close();
+        };
+    }
+</script>
+</body>
+</html>
