@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller // HTML 뷰를 반환하기 위해 Controller 사용
 public class ViewController {
 
-    @GetMapping("/test")
+    @GetMapping("/sseTest")
     public String testPage() {
         // "test"를 반환하면 Thymeleaf가 templates/test.html을 찾습니다.
         return "test";
