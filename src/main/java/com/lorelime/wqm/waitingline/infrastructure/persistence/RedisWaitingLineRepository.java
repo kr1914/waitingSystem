@@ -23,8 +23,19 @@ public class RedisWaitingLineRepository implements WaitingLineRepository {
 
     @Override
     public Mono<Boolean> setUserWaiting(String userId, double score) {
-        return reactiveRedisTemplate.opsForZSet()
+        String key = WaitinglineEnum.RedisKey.WAITING_TTL_KEY.getValue() + ":" + userId;
+        log.debug("setUserWaiting (TTL Key)=> {}", key);
+
+        // 1. TTL 키 설정 Mono
+        Mono<Boolean> setTtlMono = reactiveRedisTemplate.opsForValue()
+                .set(key, "ok", Duration.ofSeconds(10));
+
+        // 2. ZSet 추가 Mono
+        Mono<Boolean> addZSetMono = reactiveRedisTemplate.opsForZSet()
                 .add(WaitinglineEnum.RedisKey.WAITING_KEY.getValue(), userId, score);
+
+        // 3. 두 작업을 순차적으로 연결 (TTL 설정 후 ZSet 추가)
+        return setTtlMono.then(addZSetMono);
     }
 
     @Override

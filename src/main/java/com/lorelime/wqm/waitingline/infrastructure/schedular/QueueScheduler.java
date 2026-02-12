@@ -21,7 +21,7 @@ public class QueueScheduler {
         this.reactiveRedisTemplate = reactiveRedisTemplate;
     }
 
-    @Scheduled(fixedDelay = 2000)
+    @Scheduled(fixedDelay = 5000)
     public void processQueue() {
         // 1. 이탈자 제거 (Heartbeat/TTL 키가 없는 유저 삭제)
         cleanDeadUsers()
@@ -40,6 +40,7 @@ public class QueueScheduler {
                 .range(waitingKey, org.springframework.data.domain.Range.unbounded())
                 .flatMap(userId -> {
                     // 유저별 TTL 키 존재 여부 확인
+//                    log.debug(userId);
                     return reactiveRedisTemplate.hasKey(ttlPrefix + userId)
                             .flatMap(exists -> {
                                 if (!exists) {

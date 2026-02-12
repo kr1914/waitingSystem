@@ -38,7 +38,7 @@
     // 1초마다 실행될 함수
     async function checkQueueStatus() {
         try {
-            const response = await fetch(`/api/v2/queue/pooling?userId=${userId}`, {
+            const response = await fetch(`/api/v2/queue/poolingSessinon?userId=${userId}`, {
                 method: 'POST'
             });
 
