@@ -16,7 +16,10 @@ public class SecurityConfig {
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable) // 테스트를 위해 CSRF 비활성화
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/api/v1/queue/**", "/").permitAll() // 대기열 API 허용
+                        .pathMatchers("/test").permitAll()
+                        .pathMatchers("/poolingTest").permitAll()
+                        .pathMatchers("/monitor").permitAll()
+                        .pathMatchers("/api/*/queue/**", "/").permitAll() // 대기열 API 허용
                         .anyExchange().authenticated()
                 )
                 .build();

@@ -1,4 +1,4 @@
-package com.lorelime.wqm.infra.redis;
+package com.lorelime.wqm.waitingline.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

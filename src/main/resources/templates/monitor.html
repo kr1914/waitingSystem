@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>대기열 모니터링 시스템</title>
+  <style>
+    body { font-family: 'Pretendard', sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+    .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    h2 { border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333; display: flex; justify-content: space-between; }
+    .count-badge { background: #3498db; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.8em; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #fafafa; }
+    th { background-color: #f8f9fa; color: #666; font-size: 0.9em; }
+    .user-id { font-family: monospace; color: #e67e22; font-weight: bold; }
+    .status-active { color: #27ae60; font-weight: bold; }
+    .status-waiting { color: #f1c40f; font-weight: bold; }
+    .refresh-indicator { font-size: 12px; color: #999; text-align: right; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+<h1 style="text-align: center; color: #2c3e50;">Queue Management Dashboard</h1>
+<div class="refresh-indicator">Last updated: <span id="last-update">-</span> (Auto-refresh every 1s)</div>
+
+<div class="dashboard">
+  <div class="card">
+    <h2>대기 중인 사용자 <span id="waiting-count" class="count-badge">0</span></h2>
+    <table>
+      <thead>
+      <tr>
+        <th>순번</th>
+        <th>사용자 ID</th>
+        <th>상태</th>
+        <th>관리</th>
+      </tr>
+      </thead>
+      <tbody id="waiting-table-body">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>활성 사용자 <span id="active-count" class="count-badge" style="background: #27ae60;">0</span></h2>
+    <table>
+      <thead>
+      <tr>
+        <th>사용자 ID</th>
+        <th>상태</th>
+        <th>관리</th>
+      </tr>
+      </thead>
+      <tbody id="active-table-body">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  async function updateDashboard() {
+    try {
+      // 1. 대기열 리스트 호출
+      const waitRes = await fetch('/api/v2/queue/admin/waiting-list');
+      const waitingUsers = await waitRes.json();
+
+      // 2. 활성 리스트 호출
+      const activeRes = await fetch('/api/v2/queue/admin/active-list');
+      const activeUsers = await activeRes.json();
+
+      renderWaitingTable(waitingUsers);
+      renderActiveTable(activeUsers);
+
+      document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
+    } catch (error) {
+      console.error("데이터 갱신 중 오류:", error);
+    }
+  }
+
+  // 테이블 렌더링 함수 수정
+  function renderWaitingTable(users) {
+    const body = document.getElementById('waiting-table-body');
+    document.getElementById('waiting-count').innerText = users.length;
+
+    body.innerHTML = users.length ? users.map((id, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td class="user-id">${id}</td>
+                <td><span class="status-waiting">WAITING</span></td>
+                <td><button onclick="deleteUser('${id}', 'WAITING')" style="color:red; cursor:pointer;">삭제</button></td>
+            </tr>
+        `).join('') : '<tr><td colspan="4">대기자가 없습니다.</td></tr>';
+  }
+
+  function renderActiveTable(users) {
+    const body = document.getElementById('active-table-body');
+    document.getElementById('active-count').innerText = users.length;
+
+    body.innerHTML = users.length ? users.map(id => `
+            <tr>
+                <td class="user-id">${id}</td>
+                <td><span class="status-active">ACTIVE</span></td>
+                <td><button onclick="deleteUser('${id}', 'ACTIVE')" style="color:red; cursor:pointer;">삭제</button></td>
+            </tr>
+        `).join('') : '<tr><td colspan="3">활성 사용자가 없습니다.</td></tr>';
+  }
+
+  // 삭제 API 호출 함수
+  async function deleteUser(userId, type) {
+    if (!confirm(`${userId} 사용자를 ${type} 목록에서 삭제하시겠습니까?`)) return;
+
+    try {
+      const response = await fetch(`/api/v2/queue/admin/remove?userId=${userId}&type=${type}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert("삭제되었습니다.");
+        updateDashboard(); // 목록 즉시 갱신
+      } else {
+        alert("삭제 실패");
+      }
+    } catch (error) {
+      console.error("삭제 중 오류:", error);
+    }
+  }
+
+  // 1초마다 실행
+  setInterval(updateDashboard, 1000);
+  // 초기 실행
+  updateDashboard();
+</script>
+
+</body>
+</html>

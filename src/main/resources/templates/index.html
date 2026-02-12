@@ -49,9 +49,9 @@
             rankDisplay.innerText = event.data.replace("내 앞 대기자 수: ", "").replace("명", "");
 
             // 만약 0명이 되면 자동으로 다른 페이지로 이동하는 로직을 여기에 추가할 수 있습니다.
-            if (event.data.includes(": 0명")) {
+            if (event.data.includes("입장")) {
                 rankDisplay.style.color = "#28a745";
-                rankDisplay.innerText = "입장 가능!";
+                rankDisplay.innerText = "입장 가능입니다.";
             }
         });
 
